@@ -89,7 +89,7 @@ export default function PropertiesPage() {
   if (propsStatus === "error") {
     return (
       <ErrorState
-        title="Could not load properties"
+        title="Could not load sites"
         body={propsError?.message ?? "Something went wrong while contacting Google."}
         onRetry={reloadProperties}
       />
@@ -100,9 +100,9 @@ export default function PropertiesPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h1 className="font-display text-2xl tracking-tight">Properties</h1>
+          <h1 className="font-display text-2xl tracking-tight">Sites</h1>
           <p className="mt-0.5 text-sm text-muted">
-            Every GA4 property the connected account can access, grouped by Analytics account.
+            Every GA4 site the connected account can access, grouped by Analytics account.
           </p>
         </div>
         {demo ? <DemoBadge /> : null}
@@ -143,7 +143,7 @@ export default function PropertiesPage() {
           ))}
         </select>
         <span className="ml-auto text-xs text-muted">
-          {selected.length} selected for multi-property reports
+          {selected.length} selected for multi-site reports
         </span>
         <Button
           size="sm"
@@ -166,15 +166,15 @@ export default function PropertiesPage() {
         </Card>
       ) : filtered.length === 0 ? (
         <EmptyState
-          title="No properties match"
-          body="Adjust the search or account filter, or reload the property list."
-          action={<Button onClick={reloadProperties}>Reload properties</Button>}
+          title="No sites match"
+          body="Adjust the search or account filter, or reload the site list."
+          action={<Button onClick={reloadProperties}>Reload sites</Button>}
         />
       ) : (
         <Card>
           <CardHeader
-            title={`${filtered.length} ${filtered.length === 1 ? "property" : "properties"}`}
-            subtitle="Select properties with the checkboxes to include them in consolidated reports"
+            title={`${filtered.length} ${filtered.length === 1 ? "site" : "sites"}`}
+            subtitle="Select sites with the checkboxes to include them in consolidated reports"
           />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -183,7 +183,7 @@ export default function PropertiesPage() {
                   <th scope="col" className="w-10 px-4 py-2.5">
                     <span className="sr-only">Select</span>
                   </th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">Property</th>
+                  <th scope="col" className="px-4 py-2.5 font-medium">Site</th>
                   <th scope="col" className="px-4 py-2.5 font-medium">Account</th>
                   <th scope="col" className="px-4 py-2.5 font-medium">Time zone</th>
                   <th scope="col" className="px-4 py-2.5 font-medium">Currency</th>

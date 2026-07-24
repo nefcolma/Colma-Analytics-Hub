@@ -59,7 +59,7 @@ export default function ReportsPage() {
         <div>
           <h1 className="font-display text-2xl tracking-tight">Reports</h1>
           <p className="mt-0.5 text-sm text-muted">
-            Consolidated comparison across the properties in the latest report.
+            Consolidated comparison across the sites in the latest report.
           </p>
         </div>
         {report?.demo ? <DemoBadge /> : null}
@@ -80,7 +80,7 @@ export default function ReportsPage() {
       {reportStatus !== "loading" && !report ? (
         <EmptyState
           title="No report yet"
-          body="Pick properties and a date range in the header, then generate a report to compare properties here."
+          body="Pick sites and a date range in the header, then generate a report to compare sites here."
           action={
             <Button variant="primary" onClick={() => void generate()}>
               Generate report
@@ -95,7 +95,7 @@ export default function ReportsPage() {
 
           <Card>
             <CardHeader
-              title="Property comparison"
+              title="Site comparison"
               subtitle={`${fmtIsoDate(report.range.startDate)} – ${fmtIsoDate(report.range.endDate)}${
                 report.compareRange
                   ? ` · compared to ${fmtIsoDate(report.compareRange.startDate)} – ${fmtIsoDate(
@@ -111,7 +111,7 @@ export default function ReportsPage() {
               columns={[
                 {
                   id: "name",
-                  label: "Property",
+                  label: "Site",
                   value: (p) => p.propertyName,
                   render: (p) => (
                     <span className="block">
@@ -212,7 +212,7 @@ export default function ReportsPage() {
               dateStyle: "medium",
               timeStyle: "short",
             })}
-            . Each property keeps its own time zone; rates are never summed across properties.
+            . Each site keeps its own time zone; rates are never summed across sites.
           </p>
         </>
       ) : null}

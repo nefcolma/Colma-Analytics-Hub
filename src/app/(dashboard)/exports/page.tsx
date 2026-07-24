@@ -87,14 +87,14 @@ export default function ExportsPage() {
                 report.range.endDate
               )} · ${report.properties.filter((p) => p.status === "ok").length} of ${
                 report.properties.length
-              } properties reporting`}
+              } sites reporting`}
             />
             <div className="space-y-4 p-5">
               <div>
                 <h3 className="text-sm font-semibold">Summary CSV</h3>
                 <p className="mt-1 text-sm text-muted">
-                  One row per property with every KPI, plus report metadata: generation time, date
-                  range, comparison range, currency, time zone, and per-property status.
+                  One row per site with every KPI, plus report metadata: generation time, date
+                  range, comparison range, currency, time zone, and per-site status.
                 </p>
                 <Button
                   variant="primary"
@@ -108,7 +108,7 @@ export default function ExportsPage() {
               <div className="border-t border-line pt-4">
                 <h3 className="text-sm font-semibold">Section CSVs</h3>
                 <p className="mt-1 text-sm text-muted">
-                  Each section exports the consolidated rows across all successful properties.
+                  Each section exports the consolidated rows across all successful sites.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {SECTIONS.map((section) => (

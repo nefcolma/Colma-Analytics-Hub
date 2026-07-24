@@ -33,10 +33,20 @@ async function adminGet(path: string, accessToken: string, context: string): Pro
 /** Lists every account + property the user can access, following pagination. */
 export async function listAccountSummaries(
   accessToken: string,
-  cacheKey: string
+  cacheKey: string,
+  opts: { enrichDetails?: boolean } = {}
 ): Promise<PropertiesResponse> {
-  const cached = summariesCache.get(cacheKey);
-  if (cached) return cached;
+  const enrich = opts.enrichDetails ?? true;
+  // A fully-enriched result is a superset, so names-only callers can reuse it.
+  const enriched = summariesCache.get(cacheKey);
+  if (enriched) return enriched;
+  // Names-only results are cached separately so they never overwrite the
+  // enriched entry the Sites page relies on for time zone / currency.
+  const storeKey = enrich ? cacheKey : `${cacheKey}|names`;
+  if (!enrich) {
+    const namesOnly = summariesCache.get(storeKey);
+    if (namesOnly) return namesOnly;
+  }
 
   const accounts = new Map<
     string,
@@ -72,36 +82,48 @@ export async function listAccountSummaries(
     pageToken = data.nextPageToken;
   } while (pageToken);
 
-  // Enrich with time zone and currency (Admin API properties.get), limited concurrency.
-  const all = [...accounts.values()].flatMap((a) => a.properties);
-  await mapWithLimit(all, 5, async (p) => {
-    const cachedDetail = detailCache.get(p.propertyId);
-    if (cachedDetail) {
-      p.timeZone = cachedDetail.timeZone;
-      p.currencyCode = cachedDetail.currencyCode;
-      return;
-    }
-    try {
-      const detail = (await adminGet(
-        `/properties/${p.propertyId}`,
-        accessToken,
-        "reading property details"
-      )) as PropertyDetail;
-      detailCache.set(p.propertyId, {
-        timeZone: detail.timeZone,
-        currencyCode: detail.currencyCode,
-      });
-      p.timeZone = detail.timeZone;
-      p.currencyCode = detail.currencyCode;
-    } catch {
-      // Non-fatal: list the property without time zone / currency.
-    }
-  });
+  // Enrich with time zone and currency (Admin API properties.get), limited
+  // concurrency. Skipped for report generation (enrichDetails: false), which
+  // reads time zone / currency from the GA report metadata instead — this keeps
+  // each report request well under Cloudflare Workers' per-request subrequest
+  // limit even when many sites are selected.
+  if (enrich) {
+    const all = [...accounts.values()].flatMap((a) => a.properties);
+    await mapWithLimit(all, 5, async (p) => {
+      const cachedDetail = detailCache.get(p.propertyId);
+      if (cachedDetail) {
+        p.timeZone = cachedDetail.timeZone;
+        p.currencyCode = cachedDetail.currencyCode;
+        return;
+      }
+      try {
+        const detail = (await adminGet(
+          `/properties/${p.propertyId}`,
+          accessToken,
+          "reading property details"
+        )) as PropertyDetail;
+        detailCache.set(p.propertyId, {
+          timeZone: detail.timeZone,
+          currencyCode: detail.currencyCode,
+        });
+        p.timeZone = detail.timeZone;
+        p.currencyCode = detail.currencyCode;
+      } catch {
+        // Non-fatal: list the property without time zone / currency.
+      }
+    });
+  }
 
   const result: PropertiesResponse = {
     demo: false,
-    accounts: [...accounts.values()].sort((a, b) => a.accountName.localeCompare(b.accountName)),
+    // Largest accounts first (most sites), then alphabetical — surfaces the
+    // primary account (the one with the most sites) at the top of the picker
+    // and the Sites page.
+    accounts: [...accounts.values()].sort(
+      (a, b) =>
+        b.properties.length - a.properties.length || a.accountName.localeCompare(b.accountName)
+    ),
   };
-  summariesCache.set(cacheKey, result);
+  summariesCache.set(storeKey, result);
   return result;
 }

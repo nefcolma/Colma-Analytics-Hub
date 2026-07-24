@@ -99,7 +99,14 @@ export function demoPropertiesResponse(): PropertiesResponse {
     });
     byAccount.set(f.accountId, acc);
   }
-  return { demo: true, accounts: [...byAccount.values()] };
+  return {
+    demo: true,
+    // Match the live sort: largest accounts first, then alphabetical.
+    accounts: [...byAccount.values()].sort(
+      (a, b) =>
+        b.properties.length - a.properties.length || a.accountName.localeCompare(b.accountName)
+    ),
+  };
 }
 
 export function demoFixture(propertyId: string): Fixture | undefined {

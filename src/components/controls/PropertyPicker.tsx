@@ -27,12 +27,12 @@ export function PropertyPicker() {
 
   const label =
     selected.length === 0
-      ? "No properties"
+      ? "No sites"
       : selected.length === properties.length
-        ? `All properties (${properties.length})`
+        ? `All sites (${properties.length})`
         : selected.length === 1
-          ? (properties.find((p) => p.propertyId === selected[0])?.propertyName ?? "1 property")
-          : `${selected.length} properties`;
+          ? (properties.find((p) => p.propertyId === selected[0])?.propertyName ?? "1 site")
+          : `${selected.length} sites`;
 
   return (
     <div className="relative" ref={ref}>

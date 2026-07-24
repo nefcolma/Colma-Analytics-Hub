@@ -36,7 +36,10 @@ export async function generateReport(opts: {
   // Resolve display names/metadata from the (cached) account summaries.
   const index = new Map<string, PropertySummary>();
   try {
-    const summaries = await listAccountSummaries(accessToken, userKey);
+    // Names only: time zone / currency come from each site's GA report
+    // metadata, so we skip the per-site Admin detail calls here. That keeps the
+    // report request's subrequest count low even for large selections.
+    const summaries = await listAccountSummaries(accessToken, userKey, { enrichDetails: false });
     for (const acc of summaries.accounts) {
       for (const p of acc.properties) index.set(p.propertyId, p);
     }

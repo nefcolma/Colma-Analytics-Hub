@@ -14,7 +14,7 @@ export function PartialFailureBanner() {
     <div className="no-print flex flex-wrap items-center gap-3 rounded-lg border border-accent/40 bg-accent-soft px-4 py-3 text-sm">
       <div className="flex-1">
         <p className="font-medium text-accent-strong">
-          {failed.length} of {report.properties.length} properties could not be reported.
+          {failed.length} of {report.properties.length} sites could not be reported.
         </p>
         <ul className="mt-1 space-y-0.5 text-xs text-ink/80">
           {failed.map((p) => (

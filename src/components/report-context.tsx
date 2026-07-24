@@ -10,12 +10,19 @@ import {
   useState,
 } from "react";
 import { useSession } from "next-auth/react";
-import { resolveRange } from "@/lib/dateRanges";
+import { compareRangeFor, resolveRange } from "@/lib/dateRanges";
+import {
+  chunk,
+  orderReports,
+  REPORT_CHUNK_CONCURRENCY,
+  REPORT_CHUNK_SIZE,
+} from "@/lib/report/batch";
 import type {
   ApiError,
   CompareMode,
   DateRange,
   PropertiesResponse,
+  PropertyReport,
   PropertySummary,
   RangeSelection,
   ReportError,
@@ -186,23 +193,46 @@ export function ReportProvider({ children }: { children: React.ReactNode }) {
 
   const runReport = useCallback(
     async (ids: string[]): Promise<ReportResponse | null> => {
-      const res = await fetch("/api/analytics/report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          propertyIds: ids,
-          range: resolvedRange,
-          compare,
-          demo,
-        }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as ApiError | null;
-        throw body?.error ?? UNKNOWN_ERROR;
+      const postChunk = async (chunkIds: string[]): Promise<ReportResponse> => {
+        const res = await fetch("/api/analytics/report", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ propertyIds: chunkIds, range: resolvedRange, compare, demo }),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as ApiError | null;
+          throw body?.error ?? UNKNOWN_ERROR;
+        }
+        return (await res.json()) as ReportResponse;
+      };
+
+      // Small selections: a single request (unchanged behaviour).
+      if (ids.length <= REPORT_CHUNK_SIZE) return await postChunk(ids);
+
+      // Large selections are split into batches so each server request stays
+      // within Cloudflare Workers' per-request subrequest limit. Batches run
+      // with small concurrency to be gentle on Google's quota; a failed batch
+      // is turned into retryable per-site errors rather than dropping sites.
+      const batches = chunk(ids, REPORT_CHUNK_SIZE);
+      const collected: PropertyReport[] = [];
+      for (let i = 0; i < batches.length; i += REPORT_CHUNK_CONCURRENCY) {
+        const group = batches.slice(i, i + REPORT_CHUNK_CONCURRENCY);
+        const settled = await Promise.allSettled(group.map(postChunk));
+        for (const s of settled) {
+          if (s.status === "fulfilled") collected.push(...s.value.properties);
+        }
       }
-      return (await res.json()) as ReportResponse;
+      const summaries = new Map(properties.map((p) => [p.propertyId, p]));
+      return {
+        demo,
+        generatedAt: new Date().toISOString(),
+        range: resolvedRange,
+        compare,
+        compareRange: compareRangeFor(resolvedRange, compare),
+        properties: orderReports(ids, collected, summaries),
+      };
     },
-    [resolvedRange, compare, demo]
+    [resolvedRange, compare, demo, properties]
   );
 
   const generate = useCallback(
@@ -211,7 +241,7 @@ export function ReportProvider({ children }: { children: React.ReactNode }) {
       if (ids.length === 0) {
         setReportError({
           code: "unknown",
-          message: "Select at least one property to generate a report.",
+          message: "Select at least one site to generate a report.",
           retryable: false,
         });
         setReportStatus("error");

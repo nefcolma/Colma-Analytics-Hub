@@ -99,9 +99,9 @@ export default function OverviewPage() {
   if (propsStatus === "ready" && properties.length === 0) {
     return (
       <EmptyState
-        title="No properties available"
-        body="The connected Google account does not have access to any GA4 properties. Ask an Analytics administrator to grant Viewer access, then reload."
-        action={<Button onClick={reloadProperties}>Reload properties</Button>}
+        title="No sites available"
+        body="The connected Google account does not have access to any GA4 sites. Ask an Analytics administrator to grant Viewer access, then reload."
+        action={<Button onClick={reloadProperties}>Reload sites</Button>}
       />
     );
   }
@@ -117,7 +117,7 @@ export default function OverviewPage() {
             <p className="mt-0.5 text-sm text-muted">
               {fmtIsoDate(report.range.startDate)} – {fmtIsoDate(report.range.endDate)} ·{" "}
               {okProperties.length} of {report.properties.length}{" "}
-              {report.properties.length === 1 ? "property" : "properties"} reporting
+              {report.properties.length === 1 ? "site" : "sites"} reporting
             </p>
           ) : null}
         </div>
@@ -143,8 +143,8 @@ export default function OverviewPage() {
 
       {selected.length === 0 && !loading && !report ? (
         <EmptyState
-          title="Choose properties to begin"
-          body="Pick one, several, or all properties from the selector in the header, then generate a report."
+          title="Choose sites to begin"
+          body="Pick one, several, or all sites from the selector in the header, then generate a report."
         />
       ) : null}
 
@@ -162,18 +162,18 @@ export default function OverviewPage() {
 
           {okProperties.length === 0 ? (
             <ErrorState
-              title="No properties could be reported"
-              body={report.properties[0]?.error?.message ?? "Every selected property failed."}
+              title="No sites could be reported"
+              body={report.properties[0]?.error?.message ?? "Every selected site failed."}
               onRetry={() => void generate()}
             />
           ) : okProperties.every((p) => p.noData) ? (
             <EmptyState
               title="No data for this date range"
               body={`The report ran successfully, but ${
-                okProperties.length === 1 ? "the selected property" : "every selected property"
+                okProperties.length === 1 ? "the selected site" : "every selected site"
               } returned no Analytics data for ${fmtIsoDate(report.range.startDate)} – ${fmtIsoDate(
                 report.range.endDate
-              )}. Pick a property with recent traffic, widen the date range, or confirm data collection is active in GA4.`}
+              )}. Pick a site with recent traffic, widen the date range, or confirm data collection is active in GA4.`}
             />
           ) : (
             <>
@@ -182,7 +182,7 @@ export default function OverviewPage() {
               <Card>
                 <CardHeader
                   title="Traffic trend"
-                  subtitle="Active users and sessions across the selected properties"
+                  subtitle="Active users and sessions across the selected sites"
                   right={report.demo ? <DemoBadge /> : undefined}
                 />
                 <div className="p-4">

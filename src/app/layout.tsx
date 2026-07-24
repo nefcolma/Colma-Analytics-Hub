@@ -5,7 +5,7 @@ import { Providers } from "@/components/providers";
 export const metadata: Metadata = {
   title: "Colma Analytics Hub",
   description:
-    "Centralize Google Analytics 4 accounts, properties, and reports in one dashboard.",
+    "Centralize Google Analytics 4 accounts, sites, and reports in one dashboard.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

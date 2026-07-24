@@ -11,8 +11,8 @@ export function ConnectCard() {
     <Card className="mx-auto max-w-lg px-8 py-12 text-center">
       <h2 className="font-display text-2xl tracking-tight">Connect Google Analytics</h2>
       <p className="mx-auto mt-3 max-w-md text-sm text-muted">
-        Sign in with the Google account that has access to your Analytics properties. The app
-        requests read-only access and detects every GA4 account and property you can view.
+        Sign in with the Google account that has access to your Analytics sites. The app
+        requests read-only access and detects every GA4 account and site you can view.
       </p>
       <div className="mt-6 flex items-center justify-center gap-3">
         {googleConfigured ? (

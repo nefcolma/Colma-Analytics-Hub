@@ -97,7 +97,7 @@ export default function SettingsPage() {
           ) : googleConfigured ? (
             <>
               <p className="text-muted">
-                Connect the Google account that can view your GA4 properties. The app requests
+                Connect the Google account that can view your GA4 sites. The app requests
                 read-only access and never writes to Analytics.
               </p>
               <Button variant="primary" onClick={() => signIn("google")}>

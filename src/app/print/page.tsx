@@ -92,7 +92,7 @@ export default function PrintPage() {
             </dd>
           </div>
           <div>
-            <dt className="inline font-medium">Properties: </dt>
+            <dt className="inline font-medium">Sites: </dt>
             <dd className="inline">
               {ok.length} of {report.properties.length} reporting
             </dd>
@@ -117,7 +117,7 @@ export default function PrintPage() {
       <Section title="Geography" rows={geography} metric="activeUsers" />
 
       <section className="mt-6 break-inside-avoid">
-        <h2 className="mb-2 font-display text-lg tracking-tight">Properties included</h2>
+        <h2 className="mb-2 font-display text-lg tracking-tight">Sites included</h2>
         <ul className="space-y-1 text-xs text-muted">
           {report.properties.map((p) => (
             <li key={p.propertyId}>

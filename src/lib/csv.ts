@@ -31,12 +31,12 @@ function metaRows(report: ReportResponse, scope: string): (string | number)[][] 
 export function buildSummaryCsv(report: ReportResponse): string {
   const ok = report.properties;
   const scope =
-    ok.length === 1 ? `${ok[0].propertyName} (${ok[0].propertyId})` : `${ok.length} properties`;
+    ok.length === 1 ? `${ok[0].propertyName} (${ok[0].propertyId})` : `${ok.length} sites`;
   const rows: (string | number | null)[][] = [
     ...metaRows(report, scope),
     [
-      "Property name",
-      "Property ID",
+      "Site name",
+      "Site ID",
       "Account",
       "Status",
       "Active users",
