@@ -16,6 +16,18 @@
     "enabled": true
   },
 
+  // --- Non-secret environment variables -------------------------------------
+  // Public config only. Secrets (GOOGLE_CLIENT_SECRET, SESSION_SECRET,
+  // TOKEN_ENCRYPTION_KEY) are set with `wrangler secret put`, never here.
+  // GOOGLE_REDIRECT_URI and NEXTAUTH_URL depend on the deployed URL — after the
+  // first `npm run deploy`, set them to your Worker/custom-domain URL and add
+  // that redirect URI to the Google OAuth client. For example:
+  //   "GOOGLE_REDIRECT_URI": "https://<your-domain>/api/auth/callback/google",
+  //   "NEXTAUTH_URL": "https://<your-domain>"
+  "vars": {
+    "GOOGLE_CLIENT_ID": "768631127899-qfcnlv1khau2u0tv48dui4j7ncbbhvcq.apps.googleusercontent.com"
+  },
+
   // --- KV: normalized Google Analytics report cache -------------------------
   // Only cached, normalized report responses are stored here. No OAuth tokens,
   // client/session secrets, or auth codes are ever written to KV.
