@@ -17,16 +17,18 @@
   },
 
   // --- KV: normalized Google Analytics report cache -------------------------
-  // Create the namespace once, then paste the returned ids below:
-  //   npx wrangler kv namespace create REPORT_CACHE_KV
-  //   npx wrangler kv namespace create REPORT_CACHE_KV --preview
   // Only cached, normalized report responses are stored here. No OAuth tokens,
   // client/session secrets, or auth codes are ever written to KV.
+  // `id` is the production namespace (created with
+  // `npx wrangler kv namespace create REPORT_CACHE_KV`).
+  // `preview_id` is optional — only used by `npm run preview` / `wrangler dev`.
+  // Local dev and tests use the in-memory fallback, so it is not required to
+  // deploy. To add it, run `npx wrangler kv namespace create REPORT_CACHE_KV
+  // --preview` and set "preview_id" to the returned id.
   "kv_namespaces": [
     {
       "binding": "REPORT_CACHE_KV",
-      "id": "REPLACE_WITH_REPORT_CACHE_KV_NAMESPACE_ID",
-      "preview_id": "REPLACE_WITH_REPORT_CACHE_KV_PREVIEW_ID"
+      "id": "9ee89c5474ef4338ababbc3a1a5ab9e6"
     }
   ]
 
