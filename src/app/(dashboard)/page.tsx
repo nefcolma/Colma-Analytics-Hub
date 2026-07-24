@@ -166,6 +166,15 @@ export default function OverviewPage() {
               body={report.properties[0]?.error?.message ?? "Every selected property failed."}
               onRetry={() => void generate()}
             />
+          ) : okProperties.every((p) => p.noData) ? (
+            <EmptyState
+              title="No data for this date range"
+              body={`The report ran successfully, but ${
+                okProperties.length === 1 ? "the selected property" : "every selected property"
+              } returned no Analytics data for ${fmtIsoDate(report.range.startDate)} – ${fmtIsoDate(
+                report.range.endDate
+              )}. Pick a property with recent traffic, widen the date range, or confirm data collection is active in GA4.`}
+            />
           ) : (
             <>
               {kpis ? <KpiGrid kpis={kpis} compareRange={report.compareRange} /> : null}

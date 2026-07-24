@@ -54,7 +54,7 @@ export function PropertyPicker() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-40 mt-1.5 max-h-96 w-80 overflow-auto rounded-lg border border-line bg-surface p-2 shadow-lg">
+        <div className="absolute left-0 z-50 mt-1.5 max-h-96 w-80 max-w-[calc(100vw-1.5rem)] overflow-auto rounded-lg border border-line bg-surface p-2 shadow-lg">
           <div className="mb-1 flex items-center justify-between px-2 py-1">
             <span className="text-xs font-medium text-muted">
               {selected.length} of {properties.length} selected

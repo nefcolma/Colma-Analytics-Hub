@@ -22,7 +22,7 @@ export function Header() {
   const initial = (userName ?? userEmail ?? "?").charAt(0).toUpperCase();
 
   return (
-    <header className="no-print sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
+    <header className="no-print sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 lg:px-8">
         <span className="mr-auto flex items-center gap-2 lg:hidden">
           <span className="font-display text-base tracking-tight">Colma Analytics Hub</span>

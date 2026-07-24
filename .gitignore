@@ -60,3 +60,6 @@ client_secret*.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local Claude Code settings (per-machine; launch.json is shared)
+.claude/settings.local.json
