@@ -1,0 +1,39 @@
+{
+  // Cloudflare Workers configuration for the OpenNext build of Colma Analytics Hub.
+  // Docs: https://opennext.js.org/cloudflare
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "colma-analytics-hub",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-01",
+  // nodejs_compat is required by OpenNext (and by node:crypto used for cache
+  // key hashing and token encryption).
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+
+  // --- KV: normalized Google Analytics report cache -------------------------
+  // Create the namespace once, then paste the returned ids below:
+  //   npx wrangler kv namespace create REPORT_CACHE_KV
+  //   npx wrangler kv namespace create REPORT_CACHE_KV --preview
+  // Only cached, normalized report responses are stored here. No OAuth tokens,
+  // client/session secrets, or auth codes are ever written to KV.
+  "kv_namespaces": [
+    {
+      "binding": "REPORT_CACHE_KV",
+      "id": "REPLACE_WITH_REPORT_CACHE_KV_NAMESPACE_ID",
+      "preview_id": "REPLACE_WITH_REPORT_CACHE_KV_PREVIEW_ID"
+    }
+  ]
+
+  // Secrets (GOOGLE_CLIENT_SECRET, SESSION_SECRET, TOKEN_ENCRYPTION_KEY, ...)
+  // are NOT declared here. Set them out of band:
+  //   npx wrangler secret put GOOGLE_CLIENT_SECRET
+  //   npx wrangler secret put SESSION_SECRET
+  //   npx wrangler secret put TOKEN_ENCRYPTION_KEY
+  // and use .dev.vars for local development.
+}

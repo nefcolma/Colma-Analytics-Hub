@@ -142,7 +142,57 @@ npm run lint        # ESLint
 npm run typecheck   # tsc --noEmit
 npm test            # Vitest (single run)
 npm run test:watch  # Vitest in watch mode
+npm run cf-typegen  # Regenerate cloudflare-env.d.ts from wrangler.jsonc
+npm run preview     # Build with OpenNext and preview the Worker locally
+npm run deploy      # Build with OpenNext and deploy to Cloudflare Workers
 ```
+
+---
+
+## Deploy to Cloudflare Workers (OpenNext)
+
+Production runs on Cloudflare Workers via [OpenNext](https://opennext.js.org/cloudflare).
+The report cache is backed by a Workers KV namespace bound as `REPORT_CACHE_KV`;
+only normalized Analytics report responses are stored there — never OAuth
+tokens, client/session secrets, or authorization codes.
+
+1. **Create the KV namespace** and copy the returned IDs into the
+   `kv_namespaces` block of [`wrangler.jsonc`](wrangler.jsonc):
+
+   ```bash
+   npx wrangler kv namespace create REPORT_CACHE_KV
+   npx wrangler kv namespace create REPORT_CACHE_KV --preview
+   ```
+
+2. **Set secrets** out of band (never commit them; `wrangler.jsonc` holds no
+   secrets):
+
+   ```bash
+   npx wrangler secret put GOOGLE_CLIENT_SECRET
+   npx wrangler secret put SESSION_SECRET
+   npx wrangler secret put TOKEN_ENCRYPTION_KEY   # optional
+   ```
+
+   Non-secret vars (`GOOGLE_CLIENT_ID`, `GOOGLE_REDIRECT_URI`, `NEXTAUTH_URL`)
+   can go in a `[vars]`/`.dev.vars` block or the Workers dashboard.
+
+3. **Regenerate types** whenever bindings change, then build and deploy:
+
+   ```bash
+   npm run cf-typegen
+   npm run deploy
+   ```
+
+The cache key includes every value that changes a report (identity, account,
+property, date range, comparison, dimensions, metrics, filters, sort, and
+pagination) and is SHA-256 hashed behind a version prefix (`rc:v1`), so raw user
+identifiers never appear in KV key names and the whole cache can be invalidated
+by bumping the prefix. TTL is applied via KV `expirationTtl` (clamped to
+Cloudflare's 60-second minimum). KV is treated as eventually consistent — nothing
+depends on immediate deletion or invalidation for correctness.
+
+Locally, `next dev` and the test suite have no KV binding, so they transparently
+use the in-memory cache — no Cloudflare account required for development.
 
 ---
 
@@ -182,9 +232,14 @@ Data API's `batchRunReports` endpoint, split across two batches (five and three)
 to stay within the per-request limit.
 
 **Bounded concurrency and caching.** Reports fan out three properties at a time.
-Successful property reports are cached in memory for five minutes; account
-summaries for five minutes; property detail for thirty. Failures are never
-cached, so a retry always re-queries Google.
+Successful property reports are cached for five minutes — in Cloudflare Workers
+KV in production, or in an in-memory TTL cache during local dev, unit tests, and
+anywhere the KV binding is unavailable. Account summaries are cached in memory
+for five minutes and property detail for thirty. Failures are never cached, so a
+retry always re-queries Google. Cache reads and writes are best-effort: a KV
+miss, error, or corrupt entry simply falls through to a normal Google call, and
+writes are non-blocking (scheduled with `waitUntil`), so caching can never fail
+or delay a report. See [Deploy to Cloudflare Workers](#deploy-to-cloudflare-workers-opennext).
 
 **Failure isolation.** A property that returns a permission error, quota error,
 or timeout is marked failed and surfaced in a banner with a retry action. The
@@ -205,11 +260,12 @@ the system sans stack for body text.
 
 ## Tests
 
-135 tests across 12 files, covering date-range resolution and comparison
+142 tests across 12 files, covering date-range resolution and comparison
 periods, refresh-token encryption round-trips, retry and backoff behaviour,
 concurrency limits, Data API response normalisation (including the
 `date_range_0`/`date_range_1` split when comparing), metric aggregation,
-request validation, CSV generation and escaping, TTL caching, demo determinism,
+request validation, CSV generation and escaping, TTL caching, deterministic and
+privacy-preserving report cache keys with in-memory fallback, demo determinism,
 and per-property failure isolation.
 
 ```bash
@@ -222,7 +278,9 @@ npm test
 
 - The requested scope is read-only; the app cannot modify Analytics data or
   configuration.
-- Tokens and Analytics data are never written to logs or to a database.
+- Tokens and secrets are never written to logs, to a database, or to the report
+  cache. The Workers KV report cache holds only normalized Analytics report
+  responses, keyed by a SHA-256 hash so raw user identifiers are never exposed.
 - **Disconnect** in Settings revokes the grant with Google and clears the
   session cookie.
 - Report requests are validated server-side: numeric property IDs only, at most

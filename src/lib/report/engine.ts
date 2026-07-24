@@ -1,4 +1,4 @@
-import { globalCache } from "../cache";
+import { readReportCache, reportCacheKey, writeReportCache } from "../cache";
 import { mapWithLimit } from "../concurrency";
 import { compareRangeFor } from "../dateRanges";
 import { listAccountSummaries } from "../google/adminApi";
@@ -15,17 +15,14 @@ import type {
 /**
  * Fans out report generation across the selected properties with:
  *  - bounded concurrency (3 at a time) to stay inside Google API quotas,
- *  - short-term caching so repeated clicks do not re-query Google,
+ *  - short-term caching (Workers KV in production, in-memory otherwise) so
+ *    repeated clicks do not re-query Google,
  *  - per-property failure isolation: one failing property never discards the
  *    rest of the report.
+ *
+ * The cache is best-effort: read/write failures never fail the request, so a
+ * cache miss simply falls through to a normal Google Analytics call.
  */
-
-const REPORT_TTL_MS = 5 * 60 * 1000;
-const reportCache = globalCache<PropertyReport>("propertyReport", REPORT_TTL_MS);
-
-function cacheKey(userKey: string, propertyId: string, range: DateRange, compare: CompareMode) {
-  return [userKey, propertyId, range.startDate, range.endDate, compare].join("|");
-}
 
 export async function generateReport(opts: {
   accessToken: string;
@@ -48,10 +45,6 @@ export async function generateReport(opts: {
   }
 
   const properties = await mapWithLimit(propertyIds, 3, async (propertyId) => {
-    const key = cacheKey(userKey, propertyId, range, compare);
-    const cached = reportCache.get(key);
-    if (cached) return cached;
-
     const summary: PropertySummary = index.get(propertyId) ?? {
       propertyId,
       propertyName: `Property ${propertyId}`,
@@ -59,9 +52,19 @@ export async function generateReport(opts: {
       accountName: "Unknown account",
     };
 
+    const key = reportCacheKey({
+      userKey,
+      accountId: summary.accountId,
+      propertyId,
+      range,
+      compare,
+    });
+    const cached = await readReportCache(key);
+    if (cached) return cached;
+
     try {
       const report = await runPropertyReport(summary, accessToken, range, compare);
-      reportCache.set(key, report);
+      await writeReportCache(key, report);
       return report;
     } catch (err) {
       const detail =

@@ -151,8 +151,9 @@ export default function SettingsPage() {
             session cookie, and it is decrypted only inside the server runtime.
           </li>
           <li>
-            No Analytics data or tokens are written to a database or to logs. Report responses are
-            cached in memory for five minutes to stay inside Google&apos;s quotas.
+            OAuth tokens and secrets are never written to logs or to the report cache. Only
+            normalized report responses are cached for five minutes &mdash; in Cloudflare Workers KV
+            in production, or in memory locally &mdash; to stay inside Google&apos;s quotas.
           </li>
           <li>
             The requested scope is read-only. The app cannot modify your Analytics configuration or
