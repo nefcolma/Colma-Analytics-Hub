@@ -75,12 +75,14 @@ export function buildSummaryCsv(report: ReportResponse): string {
 
 const SECTION_HEADERS = {
   trend: ["Date", "Active users", "Sessions"],
-  channels: ["Default channel group", "Sessions", "Active users", "Engagement rate", "Key events"],
-  sourceMedium: ["Source / medium", "Sessions", "Active users", "Engagement rate", "Key events"],
+  channels: ["Default channel group", "Sessions", "Active users", "Engagement rate", "Key events", "Revenue"],
+  sourceMedium: ["Source / medium", "Sessions", "Active users", "Engagement rate", "Key events", "Revenue"],
   topPages: ["Page title", "Page path", "Views", "Active users", "Engagement rate"],
   landingPages: ["Landing page", "Sessions", "Engagement rate", "Key events"],
   geography: ["Country", "Active users", "Sessions"],
   devices: ["Device category", "Active users", "Sessions"],
+  products: ["Product", "Revenue", "Units sold", "Views"],
+  newVsReturning: ["Type", "Active users", "Sessions"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type CsvSection = keyof typeof SECTION_HEADERS;
@@ -106,6 +108,8 @@ export function sectionLabel(section: CsvSection): string {
     landingPages: "Landing pages",
     geography: "Geography",
     devices: "Devices",
+    products: "Top products",
+    newVsReturning: "New vs returning",
   };
   return labels[section];
 }
@@ -123,7 +127,17 @@ function sectionRows(p: PropertyReport, section: CsvSection): (string | number |
         r.activeUsers ?? null,
         pct(r.engagementRate),
         r.keyEvents ?? null,
+        r.revenue ?? null,
       ]);
+    case "products":
+      return (p.products ?? []).map((r) => [
+        r.key,
+        r.revenue ?? null,
+        r.quantity ?? null,
+        r.views ?? null,
+      ]);
+    case "newVsReturning":
+      return (p.newVsReturning ?? []).map((r) => [r.key, r.activeUsers ?? null, r.sessions ?? null]);
     case "topPages":
       return (p.topPages ?? []).map((r) => [
         r.key,

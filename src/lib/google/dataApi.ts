@@ -47,6 +47,7 @@ function buildRequests(range: DateRange, compareRange?: DateRange): InnerRequest
         { name: "activeUsers" },
         { name: "engagementRate" },
         { name: "keyEvents" },
+        { name: "totalRevenue" },
       ],
       orderBys: descBy("sessions"),
       limit: "10",
@@ -59,6 +60,7 @@ function buildRequests(range: DateRange, compareRange?: DateRange): InnerRequest
         { name: "activeUsers" },
         { name: "engagementRate" },
         { name: "keyEvents" },
+        { name: "totalRevenue" },
       ],
       orderBys: descBy("sessions"),
       limit: "10",
@@ -87,6 +89,20 @@ function buildRequests(range: DateRange, compareRange?: DateRange): InnerRequest
     {
       dateRanges: single,
       dimensions: [{ name: "deviceCategory" }],
+      metrics: [{ name: "activeUsers" }, { name: "sessions" }],
+      orderBys: descBy("activeUsers"),
+      limit: "4",
+    },
+    {
+      dateRanges: single,
+      dimensions: [{ name: "itemName" }],
+      metrics: [{ name: "itemRevenue" }, { name: "itemsPurchased" }, { name: "itemsViewed" }],
+      orderBys: descBy("itemRevenue"),
+      limit: "10",
+    },
+    {
+      dateRanges: single,
+      dimensions: [{ name: "newVsReturning" }],
       metrics: [{ name: "activeUsers" }, { name: "sessions" }],
       orderBys: descBy("activeUsers"),
       limit: "4",
@@ -136,7 +152,7 @@ export async function runPropertyReport(
     batchRunReports(property.propertyId, accessToken, requests.slice(5)),
   ]);
   const [kpiR, trendR, channelsR, sourceR, pagesR] = first;
-  const [landingR, geoR, devicesR] = second;
+  const [landingR, geoR, devicesR, productsR, newReturnR] = second;
 
   const kpis = parseKpiReport(kpiR, Boolean(compareRange));
   const currencyCode = kpiR?.metadata?.currencyCode ?? property.currencyCode ?? "USD";
@@ -158,11 +174,13 @@ export async function runPropertyReport(
       ? { current: kpis.current, previous: kpis.previous }
       : undefined,
     trend: parseTrend(trendR),
-    channels: parseDimensionRows(channelsR, ["sessions", "activeUsers", "engagementRate", "keyEvents"]),
-    sourceMedium: parseDimensionRows(sourceR, ["sessions", "activeUsers", "engagementRate", "keyEvents"]),
+    channels: parseDimensionRows(channelsR, ["sessions", "activeUsers", "engagementRate", "keyEvents", "revenue"]),
+    sourceMedium: parseDimensionRows(sourceR, ["sessions", "activeUsers", "engagementRate", "keyEvents", "revenue"]),
     topPages: parseDimensionRows(pagesR, ["views", "activeUsers", "engagementRate"], true),
     landingPages: parseDimensionRows(landingR, ["sessions", "engagementRate", "keyEvents"]),
     geography: parseDimensionRows(geoR, ["activeUsers", "sessions"]),
     devices: parseDimensionRows(devicesR, ["activeUsers", "sessions"]),
+    products: parseDimensionRows(productsR, ["revenue", "quantity", "views"]),
+    newVsReturning: parseDimensionRows(newReturnR, ["activeUsers", "sessions"]),
   };
 }

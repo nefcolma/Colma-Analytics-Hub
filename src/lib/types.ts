@@ -69,6 +69,10 @@ export type DimensionRow = {
   views?: number;
   engagementRate?: number;
   keyEvents?: number;
+  /** Revenue attributed to this row (channel/source revenue, item revenue). */
+  revenue?: number;
+  /** Units sold (items purchased) for product rows. */
+  quantity?: number;
 };
 
 export type ReportError = {
@@ -103,6 +107,10 @@ export type PropertyReport = {
   landingPages?: DimensionRow[];
   geography?: DimensionRow[];
   devices?: DimensionRow[];
+  /** Best-selling ecommerce items (by item revenue). */
+  products?: DimensionRow[];
+  /** Active users split into new vs returning. */
+  newVsReturning?: DimensionRow[];
 };
 
 export type ReportRequest = {

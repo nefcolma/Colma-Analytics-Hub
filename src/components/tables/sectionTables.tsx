@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { fmtInt, fmtRate } from "@/lib/format";
+import { fmtCurrency, fmtInt, fmtRate } from "@/lib/format";
 import type { DimensionRow } from "@/lib/types";
 import { Column, DataTable } from "./DataTable";
 
@@ -23,12 +23,25 @@ function metricCols(
 export function AcquisitionTable({
   channels,
   sourceMedium,
+  revenueCurrency,
 }: {
   channels: DimensionRow[];
   sourceMedium: DimensionRow[];
+  revenueCurrency?: string;
 }) {
   const [mode, setMode] = useState<"channels" | "source">("channels");
   const rows = mode === "channels" ? channels : sourceMedium;
+  // Show the revenue column (and rank by it) whenever either view has revenue,
+  // so it stays stable when toggling between channel and source/medium.
+  const showRevenue =
+    channels.some((r) => (r.revenue ?? 0) > 0) || sourceMedium.some((r) => (r.revenue ?? 0) > 0);
+  const revenueColumn: Column<DimensionRow> = {
+    id: "revenue",
+    label: "Revenue",
+    align: "right",
+    value: (r) => r.revenue ?? 0,
+    render: (r) => fmtCurrency(r.revenue, revenueCurrency),
+  };
   return (
     <div>
       <div className="flex justify-end px-4 pt-3">
@@ -56,7 +69,7 @@ export function AcquisitionTable({
       <DataTable
         rows={rows}
         rowKey={(r) => r.key}
-        initialSort={{ id: "sessions", desc: true }}
+        initialSort={{ id: showRevenue ? "revenue" : "sessions", desc: true }}
         columns={[
           {
             id: "key",
@@ -69,6 +82,7 @@ export function AcquisitionTable({
             { id: "engagementRate", label: "Engagement rate" },
             { id: "keyEvents", label: "Key events" },
           ]),
+          ...(showRevenue ? [revenueColumn] : []),
         ]}
       />
     </div>
@@ -137,6 +151,41 @@ export function GeographyTable({ rows }: { rows: DimensionRow[] }) {
         ...metricCols([
           { id: "activeUsers", label: "Active users" },
           { id: "sessions", label: "Sessions" },
+        ]),
+      ]}
+    />
+  );
+}
+
+export function ProductsTable({
+  rows,
+  revenueCurrency,
+}: {
+  rows: DimensionRow[];
+  revenueCurrency?: string;
+}) {
+  return (
+    <DataTable
+      rows={rows}
+      rowKey={(r) => r.key}
+      initialSort={{ id: "revenue", desc: true }}
+      columns={[
+        {
+          id: "key",
+          label: "Product",
+          value: (r) => r.key,
+          render: (r) => <span className="block max-w-56 truncate">{r.key}</span>,
+        },
+        {
+          id: "revenue",
+          label: "Revenue",
+          align: "right",
+          value: (r) => r.revenue ?? 0,
+          render: (r) => fmtCurrency(r.revenue, revenueCurrency),
+        },
+        ...metricCols([
+          { id: "quantity", label: "Units sold" },
+          { id: "views", label: "Views" },
         ]),
       ]}
     />

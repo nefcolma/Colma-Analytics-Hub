@@ -22,6 +22,8 @@ const SECTIONS: CsvSection[] = [
   "landingPages",
   "geography",
   "devices",
+  "products",
+  "newVsReturning",
 ];
 
 function download(filename: string, csv: string) {

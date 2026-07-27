@@ -9,10 +9,12 @@ import { KpiGrid } from "@/components/kpi/KpiGrid";
 import { RevenueBreakdown } from "@/components/kpi/RevenueBreakdown";
 import { TrendChart } from "@/components/charts/TrendChart";
 import { DevicesChart } from "@/components/charts/DevicesChart";
+import { NewReturningChart } from "@/components/charts/NewReturningChart";
 import {
   AcquisitionTable,
   GeographyTable,
   LandingPagesTable,
+  ProductsTable,
   TopPagesTable,
 } from "@/components/tables/sectionTables";
 import {
@@ -69,6 +71,17 @@ export default function OverviewPage() {
   );
   const geography = useMemo(() => aggregateRows(okProperties, (p) => p.geography, 10), [okProperties]);
   const devices = useMemo(() => aggregateRows(okProperties, (p) => p.devices, 4), [okProperties]);
+  const products = useMemo(
+    () => aggregateRows(okProperties, (p) => p.products, 10, (r) => r.revenue ?? 0),
+    [okProperties]
+  );
+  const newVsReturning = useMemo(
+    () => aggregateRows(okProperties, (p) => p.newVsReturning, 4),
+    [okProperties]
+  );
+  const hasProducts = products.length > 0;
+  const hasNewReturning = newVsReturning.some((r) => (r.activeUsers ?? 0) > 0);
+  const revenueCurrency = kpis?.revenue.currency;
 
   // ---- Interface states ----------------------------------------------------
 
@@ -208,10 +221,34 @@ export default function OverviewPage() {
               <Card>
                 <CardHeader
                   title="Traffic acquisition"
-                  subtitle="Where sessions came from during this period"
+                  subtitle="Where sessions and revenue came from during this period"
                 />
-                <AcquisitionTable channels={channels} sourceMedium={sourceMedium} />
+                <AcquisitionTable
+                  channels={channels}
+                  sourceMedium={sourceMedium}
+                  revenueCurrency={revenueCurrency}
+                />
               </Card>
+
+              {hasProducts || hasNewReturning ? (
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {hasProducts ? (
+                    <Card>
+                      <CardHeader title="Top products" subtitle="Best-selling items by revenue" />
+                      <ProductsTable rows={products} revenueCurrency={revenueCurrency} />
+                    </Card>
+                  ) : null}
+                  {hasNewReturning ? (
+                    <Card>
+                      <CardHeader
+                        title="New vs returning"
+                        subtitle="First-time vs returning active users"
+                      />
+                      <NewReturningChart rows={newVsReturning} />
+                    </Card>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <Card>

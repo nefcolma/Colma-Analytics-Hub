@@ -77,7 +77,8 @@ function splitRows(
   propertyId: string,
   labels: string[],
   totals: { sessions: number; activeUsers: number; views: number; keyEvents: number },
-  section: string
+  section: string,
+  revenueTotal = 0
 ): DimensionRow[] {
   const rng = mulberry32(hashString(`${propertyId}:${section}`));
   const weights = labels.map((_, i) => Math.pow(0.62, i) * (0.8 + rng() * 0.4));
@@ -91,8 +92,53 @@ function splitRows(
       views: Math.round(totals.views * share),
       keyEvents: Math.round(totals.keyEvents * share),
       engagementRate: Math.min(0.92, Math.max(0.2, 0.45 + rng() * 0.35)),
+      ...(revenueTotal > 0 ? { revenue: Math.round(revenueTotal * share * 100) / 100 } : {}),
     };
   });
+}
+
+const DEMO_PRODUCTS = [
+  "Metal Urn — Classic",
+  "Wood Urn — Oak",
+  "Biodegradable Urn",
+  "Memorial Necklace",
+  "Cremation Pendant",
+  "Marble Keepsake Urn",
+  "Pet Urn — Small",
+  "Photo Memorial Frame",
+];
+
+/** Demo best-selling items, generated only for properties that report revenue. */
+function demoProducts(propertyId: string, revenueTotal: number): DimensionRow[] {
+  if (revenueTotal <= 0) return [];
+  const rng = mulberry32(hashString(`${propertyId}:products`));
+  const weights = DEMO_PRODUCTS.map((_, i) => Math.pow(0.7, i) * (0.8 + rng() * 0.4));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  // Attribute ~85% of site revenue to itemised products.
+  return DEMO_PRODUCTS.map((key, i) => {
+    const revenue = Math.round(revenueTotal * 0.85 * (weights[i] / sum) * 100) / 100;
+    const avgPrice = 60 + rng() * 190;
+    const quantity = Math.max(1, Math.round(revenue / avgPrice));
+    return { key, revenue, quantity, views: Math.round(quantity * (8 + rng() * 22)) };
+  });
+}
+
+/** Demo split of active users / sessions into new vs returning. */
+function demoNewReturning(propertyId: string, activeUsers: number, sessions: number): DimensionRow[] {
+  const rng = mulberry32(hashString(`${propertyId}:newret`));
+  const newShare = 0.55 + rng() * 0.2;
+  return [
+    {
+      key: "new",
+      activeUsers: Math.round(activeUsers * newShare),
+      sessions: Math.round(sessions * newShare),
+    },
+    {
+      key: "returning",
+      activeUsers: Math.round(activeUsers * (1 - newShare)),
+      sessions: Math.round(sessions * (1 - newShare)),
+    },
+  ];
 }
 
 export function demoPropertyReport(
@@ -140,12 +186,14 @@ export function demoPropertyReport(
     noData: false,
     kpis: { current, previous },
     trend: dailySeries(propertyId, range, fixture.baseDailyUsers),
-    channels: splitRows(propertyId, CHANNELS, totals, "channels"),
-    sourceMedium: splitRows(propertyId, SOURCES, totals, "sourceMedium"),
+    channels: splitRows(propertyId, CHANNELS, totals, "channels", current.totalRevenue),
+    sourceMedium: splitRows(propertyId, SOURCES, totals, "sourceMedium", current.totalRevenue),
     topPages: pages,
     landingPages: splitRows(propertyId, PAGES.map(([, p]) => p), totals, "landing"),
     geography: splitRows(propertyId, COUNTRIES, totals, "geo"),
     devices: splitRows(propertyId, DEVICES, totals, "devices"),
+    products: demoProducts(propertyId, current.totalRevenue),
+    newVsReturning: demoNewReturning(propertyId, current.activeUsers, current.sessions),
   };
 }
 

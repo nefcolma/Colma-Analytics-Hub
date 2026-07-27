@@ -103,11 +103,17 @@ export function aggregateTrend(properties: PropertyReport[]): TrendPoint[] {
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** Merge dimension tables across properties. Rates are weighted by the row's volume metric. */
+/**
+ * Merge dimension tables across properties. Counts (including revenue and
+ * quantity) are summed; rates are weighted by the row's volume metric. Rows are
+ * ranked by `sortValue` when given (e.g. item revenue for products), otherwise
+ * by their volume metric.
+ */
 export function aggregateRows(
   properties: PropertyReport[],
   pick: (p: PropertyReport) => DimensionRow[] | undefined,
-  limit = 25
+  limit = 25,
+  sortValue?: (r: DimensionRow) => number
 ): DimensionRow[] {
   const map = new Map<string, DimensionRow & { _w: number }>();
   for (const p of properties) {
@@ -122,6 +128,8 @@ export function aggregateRows(
       cur.activeUsers = (cur.activeUsers ?? 0) + (r.activeUsers ?? 0);
       cur.views = (cur.views ?? 0) + (r.views ?? 0);
       cur.keyEvents = (cur.keyEvents ?? 0) + (r.keyEvents ?? 0);
+      cur.revenue = (cur.revenue ?? 0) + (r.revenue ?? 0);
+      cur.quantity = (cur.quantity ?? 0) + (r.quantity ?? 0);
       if (r.engagementRate !== undefined) {
         cur.engagementRate = ((cur.engagementRate ?? 0) * cur._w + r.engagementRate * weight) /
           Math.max(1, cur._w + weight);
@@ -130,16 +138,14 @@ export function aggregateRows(
       map.set(id, cur);
     }
   }
+  const rank = sortValue ?? ((r: DimensionRow) => r.sessions ?? r.views ?? r.activeUsers ?? 0);
   return [...map.values()]
     .map((row) => {
       const rest = { ...row } as DimensionRow & { _w?: number };
       delete rest._w;
       return rest as DimensionRow;
     })
-    .sort(
-      (a, b) =>
-        (b.sessions ?? b.views ?? b.activeUsers ?? 0) - (a.sessions ?? a.views ?? a.activeUsers ?? 0)
-    )
+    .sort((a, b) => rank(b) - rank(a))
     .slice(0, limit);
 }
 

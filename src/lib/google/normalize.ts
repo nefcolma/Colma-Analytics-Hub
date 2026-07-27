@@ -75,7 +75,14 @@ export function parseTrend(report: RunReportResult | undefined): TrendPoint[] {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-type MetricKey = "sessions" | "activeUsers" | "views" | "engagementRate" | "keyEvents";
+type MetricKey =
+  | "sessions"
+  | "activeUsers"
+  | "views"
+  | "engagementRate"
+  | "keyEvents"
+  | "revenue"
+  | "quantity";
 
 /**
  * Parses a single-dimension (or two-dimension, when `withDetail`) report where
