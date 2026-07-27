@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useReport } from "@/components/report-context";
 import { AuthErrorBanner } from "@/components/AuthErrorBanner";
 import { ConnectCard } from "@/components/ConnectCard";
 import { PartialFailureBanner } from "@/components/PartialFailureBanner";
 import { KpiGrid } from "@/components/kpi/KpiGrid";
+import { RevenueBreakdown } from "@/components/kpi/RevenueBreakdown";
 import { TrendChart } from "@/components/charts/TrendChart";
 import { DevicesChart } from "@/components/charts/DevicesChart";
 import {
@@ -47,6 +48,8 @@ export default function OverviewPage() {
     reportError,
     generate,
   } = useReport();
+
+  const [revenueOpen, setRevenueOpen] = useState(false);
 
   const okProperties = useMemo(
     () => (report ? report.properties.filter((p) => p.status === "ok") : []),
@@ -177,7 +180,13 @@ export default function OverviewPage() {
             />
           ) : (
             <>
-              {kpis ? <KpiGrid kpis={kpis} compareRange={report.compareRange} /> : null}
+              {kpis ? (
+                <KpiGrid
+                  kpis={kpis}
+                  compareRange={report.compareRange}
+                  onRevenueClick={() => setRevenueOpen(true)}
+                />
+              ) : null}
 
               <Card>
                 <CardHeader
@@ -230,6 +239,14 @@ export default function OverviewPage() {
             </>
           )}
         </>
+      ) : null}
+
+      {revenueOpen && report ? (
+        <RevenueBreakdown
+          properties={report.properties}
+          range={report.range}
+          onClose={() => setRevenueOpen(false)}
+        />
       ) : null}
     </div>
   );
