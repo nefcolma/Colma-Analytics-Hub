@@ -8,6 +8,7 @@ const NAV = [
   { href: "/", label: "Overview", icon: "M3 3h7v7H3zM14 3h7v4h-7zM14 10h7v11h-7zM3 13h7v8H3z" },
   { href: "/properties", label: "Sites", icon: "M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" },
   { href: "/reports", label: "Reports", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
+  { href: "/tracking", label: "Tracking", icon: "M22 12h-4l-3 9L9 3l-3 9H2" },
   { href: "/exports", label: "Exports", icon: "M12 3v12m0 0 4-4m-4 4-4-4M4 21h16" },
   { href: "/settings", label: "Settings", icon: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.5 4a8.5 8.5 0 0 1-.1 1.3l2 1.6-2 3.4-2.4-1a8.6 8.6 0 0 1-2.2 1.3L15.4 22h-4l-.4-2.6a8.6 8.6 0 0 1-2.2-1.3l-2.4 1-2-3.4 2-1.6a8.5 8.5 0 0 1 0-2.6l-2-1.6 2-3.4 2.4 1a8.6 8.6 0 0 1 2.2-1.3L11.4 2h4l.4 2.6a8.6 8.6 0 0 1 2.2 1.3l2.4-1 2 3.4-2 1.6c.1.4.1.9.1 1.3z" },
 ];
