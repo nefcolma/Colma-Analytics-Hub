@@ -1,3 +1,4 @@
+import { conversionRate } from "./format";
 import type { PropertyReport, ReportResponse } from "./types";
 
 /** RFC 4180-style CSV with a UTF-8 BOM so Excel opens it cleanly. */
@@ -46,6 +47,7 @@ export function buildSummaryCsv(report: ReportResponse): string {
       "Engagement rate",
       "Avg. session duration (s)",
       "Key events",
+      "Conversion rate",
       "Total revenue",
       "Currency",
       "Time zone",
@@ -65,6 +67,7 @@ export function buildSummaryCsv(report: ReportResponse): string {
       k ? +(k.engagementRate * 100).toFixed(2) : null,
       k ? Math.round(k.averageSessionDuration) : null,
       k?.keyEvents ?? null,
+      k ? +(conversionRate(k.keyEvents, k.sessions) * 100).toFixed(3) : null,
       p.hasRevenue && k ? +k.totalRevenue.toFixed(2) : null,
       p.currencyCode,
       p.timeZone,

@@ -16,7 +16,16 @@ import {
   EmptyState,
   ErrorState,
 } from "@/components/ui/primitives";
-import { fmtChange, fmtCurrency, fmtInt, fmtIsoDate, fmtRate, pctChange } from "@/lib/format";
+import {
+  conversionRate,
+  fmtChange,
+  fmtConversionRate,
+  fmtCurrency,
+  fmtInt,
+  fmtIsoDate,
+  fmtRate,
+  pctChange,
+} from "@/lib/format";
 import type { PropertyReport } from "@/lib/types";
 
 export default function ReportsPage() {
@@ -180,6 +189,19 @@ export default function ReportsPage() {
                   align: "right",
                   value: (p) => p.kpis?.current.keyEvents,
                   render: (p) => fmtInt(p.kpis?.current.keyEvents),
+                },
+                {
+                  id: "conversionRate",
+                  label: "Conv. rate",
+                  align: "right",
+                  value: (p) =>
+                    p.kpis ? conversionRate(p.kpis.current.keyEvents, p.kpis.current.sessions) : undefined,
+                  render: (p) =>
+                    p.kpis
+                      ? fmtConversionRate(
+                          conversionRate(p.kpis.current.keyEvents, p.kpis.current.sessions)
+                        )
+                      : "–",
                 },
                 {
                   id: "revenue",

@@ -19,6 +19,22 @@ export function fmtRate(rate: number | undefined | null): string {
   return `${(rate * 100).toFixed(1)}%`;
 }
 
+/**
+ * Conversion rates often sit well under 1%, where a single decimal hides real
+ * movement (0.32% and 0.28% would both read as "0.3%"). Use two decimals below
+ * 1%, one above.
+ */
+export function fmtConversionRate(rate: number | undefined | null): string {
+  if (rate === undefined || rate === null || Number.isNaN(rate)) return "–";
+  const pct = rate * 100;
+  return `${pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}%`;
+}
+
+/** Key events per session — the share of visits that convert. */
+export function conversionRate(keyEvents: number, sessions: number): number {
+  return sessions > 0 ? keyEvents / sessions : 0;
+}
+
 export function fmtDuration(seconds: number | undefined | null): string {
   if (seconds === undefined || seconds === null || Number.isNaN(seconds)) return "–";
   const s = Math.round(seconds);

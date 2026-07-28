@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  conversionRate,
   fmtChange,
   fmtCompact,
+  fmtConversionRate,
   fmtCurrency,
   fmtDuration,
   fmtGaDate,
@@ -88,5 +90,33 @@ describe("date formatting", () => {
 
   it("formats ISO dates with the year", () => {
     expect(fmtIsoDate("2026-07-23")).toBe("Jul 23, 2026");
+  });
+});
+
+describe("conversionRate", () => {
+  it("divides key events by sessions", () => {
+    expect(conversionRate(26, 8015)).toBeCloseTo(0.003244, 6);
+  });
+
+  it("returns zero rather than dividing by zero sessions", () => {
+    expect(conversionRate(5, 0)).toBe(0);
+  });
+});
+
+describe("fmtConversionRate", () => {
+  it("keeps two decimals below 1%, where one would hide real movement", () => {
+    expect(fmtConversionRate(0.0032)).toBe("0.32%");
+    expect(fmtConversionRate(0.0028)).toBe("0.28%");
+  });
+
+  it("uses one decimal at or above 1%", () => {
+    expect(fmtConversionRate(0.0245)).toBe("2.5%");
+    expect(fmtConversionRate(0.5)).toBe("50.0%");
+  });
+
+  it("renders zero and missing values distinctly", () => {
+    expect(fmtConversionRate(0)).toBe("0.00%");
+    expect(fmtConversionRate(undefined)).toBe("–");
+    expect(fmtConversionRate(null)).toBe("–");
   });
 });

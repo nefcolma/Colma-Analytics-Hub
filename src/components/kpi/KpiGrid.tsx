@@ -1,8 +1,10 @@
 "use client";
 
 import {
+  conversionRate,
   fmtChange,
   fmtCompact,
+  fmtConversionRate,
   fmtCurrency,
   fmtDuration,
   fmtIsoDate,
@@ -112,6 +114,13 @@ export function KpiGrid({
       change: chg((k) => k.averageSessionDuration),
     },
     { label: "Key events", value: fmtCompact(current.keyEvents), change: chg((k) => k.keyEvents) },
+    {
+      label: "Conversion rate",
+      value: fmtConversionRate(conversionRate(current.keyEvents, current.sessions)),
+      // Rate of the combined totals, not an average of per-site rates, so busy
+      // sites carry the weight they should.
+      change: chg((k) => conversionRate(k.keyEvents, k.sessions)),
+    },
   ];
 
   return (
