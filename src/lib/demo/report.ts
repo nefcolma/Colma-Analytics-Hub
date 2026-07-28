@@ -3,6 +3,7 @@ import type {
   CompareMode,
   DateRange,
   DimensionRow,
+  EcommerceFunnel,
   KpiSet,
   PropertyReport,
   ReportResponse,
@@ -123,6 +124,46 @@ function demoProducts(propertyId: string, revenueTotal: number): DimensionRow[] 
   });
 }
 
+const DEMO_SEARCH_TERMS = [
+  "cremation urns",
+  "wood urn",
+  "urn for ashes",
+  "pet urn",
+  "memorial jewelry",
+  "biodegradable urn",
+  "keepsake urn",
+  "shipping time",
+];
+
+/** Demo on-site search terms, scaled to the site's traffic. */
+function demoSearchTerms(propertyId: string, sessions: number): DimensionRow[] {
+  const rng = mulberry32(hashString(`${propertyId}:search`));
+  // Roughly 4% of sessions run an on-site search.
+  const searches = Math.round(sessions * (0.03 + rng() * 0.02));
+  if (searches < DEMO_SEARCH_TERMS.length) return [];
+  const weights = DEMO_SEARCH_TERMS.map((_, i) => Math.pow(0.68, i) * (0.8 + rng() * 0.4));
+  const sum = weights.reduce((a, b) => a + b, 0);
+  return DEMO_SEARCH_TERMS.map((key, i) => {
+    const events = Math.max(1, Math.round(searches * (weights[i] / sum)));
+    return { key, events, activeUsers: Math.max(1, Math.round(events * (0.7 + rng() * 0.2))) };
+  });
+}
+
+/** Demo ecommerce funnel, only for sites that report revenue. */
+function demoFunnel(
+  propertyId: string,
+  views: number,
+  hasRevenue: boolean
+): EcommerceFunnel | undefined {
+  if (!hasRevenue) return undefined;
+  const rng = mulberry32(hashString(`${propertyId}:funnel`));
+  const itemsViewed = Math.round(views * (0.25 + rng() * 0.1));
+  const itemsAddedToCart = Math.round(itemsViewed * (0.18 + rng() * 0.08));
+  const itemsCheckedOut = Math.round(itemsAddedToCart * (0.55 + rng() * 0.15));
+  const itemsPurchased = Math.round(itemsCheckedOut * (0.6 + rng() * 0.2));
+  return { itemsViewed, itemsAddedToCart, itemsCheckedOut, itemsPurchased };
+}
+
 /** Demo split of active users / sessions into new vs returning. */
 function demoNewReturning(propertyId: string, activeUsers: number, sessions: number): DimensionRow[] {
   const rng = mulberry32(hashString(`${propertyId}:newret`));
@@ -194,6 +235,8 @@ export function demoPropertyReport(
     devices: splitRows(propertyId, DEVICES, totals, "devices"),
     products: demoProducts(propertyId, current.totalRevenue),
     newVsReturning: demoNewReturning(propertyId, current.activeUsers, current.sessions),
+    searchTerms: demoSearchTerms(propertyId, current.sessions),
+    funnel: demoFunnel(propertyId, current.views, fixture.hasRevenue),
   };
 }
 

@@ -1,4 +1,4 @@
-import type { DimensionRow, KpiSet, TrendPoint } from "../types";
+import type { DimensionRow, EcommerceFunnel, KpiSet, TrendPoint } from "../types";
 
 /** Normalizes raw Google Analytics Data API responses into typed structures. */
 
@@ -82,7 +82,27 @@ type MetricKey =
   | "engagementRate"
   | "keyEvents"
   | "revenue"
-  | "quantity";
+  | "quantity"
+  | "events";
+
+/**
+ * Parses the ecommerce funnel totals (a single row, no dimensions). Returns
+ * undefined when the site reported nothing, so the section stays hidden rather
+ * than rendering an all-zero funnel.
+ */
+export function parseFunnel(report: RunReportResult | undefined): EcommerceFunnel | undefined {
+  const values = report?.rows?.[0]?.metricValues;
+  if (!values) return undefined;
+  const funnel: EcommerceFunnel = {
+    itemsViewed: num(values[0]?.value),
+    itemsAddedToCart: num(values[1]?.value),
+    itemsCheckedOut: num(values[2]?.value),
+    itemsPurchased: num(values[3]?.value),
+  };
+  const total =
+    funnel.itemsViewed + funnel.itemsAddedToCart + funnel.itemsCheckedOut + funnel.itemsPurchased;
+  return total > 0 ? funnel : undefined;
+}
 
 /**
  * Parses a single-dimension (or two-dimension, when `withDetail`) report where

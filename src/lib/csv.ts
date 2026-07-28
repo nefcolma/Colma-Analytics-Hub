@@ -83,6 +83,8 @@ const SECTION_HEADERS = {
   devices: ["Device category", "Active users", "Sessions"],
   products: ["Product", "Revenue", "Units sold", "Views"],
   newVsReturning: ["Type", "Active users", "Sessions"],
+  searchTerms: ["Search term", "Searches", "Active users"],
+  funnel: ["Stage", "Items"],
 } as const satisfies Record<string, readonly string[]>;
 
 export type CsvSection = keyof typeof SECTION_HEADERS;
@@ -110,6 +112,8 @@ export function sectionLabel(section: CsvSection): string {
     devices: "Devices",
     products: "Top products",
     newVsReturning: "New vs returning",
+    searchTerms: "Site search terms",
+    funnel: "Ecommerce funnel",
   };
   return labels[section];
 }
@@ -138,6 +142,17 @@ function sectionRows(p: PropertyReport, section: CsvSection): (string | number |
       ]);
     case "newVsReturning":
       return (p.newVsReturning ?? []).map((r) => [r.key, r.activeUsers ?? null, r.sessions ?? null]);
+    case "searchTerms":
+      return (p.searchTerms ?? []).map((r) => [r.key, r.events ?? null, r.activeUsers ?? null]);
+    case "funnel":
+      return p.funnel
+        ? [
+            ["Viewed", p.funnel.itemsViewed],
+            ["Added to cart", p.funnel.itemsAddedToCart],
+            ["Checked out", p.funnel.itemsCheckedOut],
+            ["Purchased", p.funnel.itemsPurchased],
+          ]
+        : [];
     case "topPages":
       return (p.topPages ?? []).map((r) => [
         r.key,

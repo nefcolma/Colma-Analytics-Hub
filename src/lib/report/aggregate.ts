@@ -1,4 +1,10 @@
-import type { DimensionRow, KpiSet, PropertyReport, TrendPoint } from "../types";
+import type {
+  DimensionRow,
+  EcommerceFunnel,
+  KpiSet,
+  PropertyReport,
+  TrendPoint,
+} from "../types";
 
 /**
  * Combines per-property results into consolidated figures for the overview.
@@ -130,6 +136,7 @@ export function aggregateRows(
       cur.keyEvents = (cur.keyEvents ?? 0) + (r.keyEvents ?? 0);
       cur.revenue = (cur.revenue ?? 0) + (r.revenue ?? 0);
       cur.quantity = (cur.quantity ?? 0) + (r.quantity ?? 0);
+      cur.events = (cur.events ?? 0) + (r.events ?? 0);
       if (r.engagementRate !== undefined) {
         cur.engagementRate = ((cur.engagementRate ?? 0) * cur._w + r.engagementRate * weight) /
           Math.max(1, cur._w + weight);
@@ -147,6 +154,29 @@ export function aggregateRows(
     })
     .sort((a, b) => rank(b) - rank(a))
     .slice(0, limit);
+}
+
+/**
+ * Sums the ecommerce funnel across sites. Returns null when no successful site
+ * reported a funnel, so the section is hidden rather than shown empty.
+ */
+export function aggregateFunnel(properties: PropertyReport[]): EcommerceFunnel | null {
+  let any = false;
+  const total: EcommerceFunnel = {
+    itemsViewed: 0,
+    itemsAddedToCart: 0,
+    itemsCheckedOut: 0,
+    itemsPurchased: 0,
+  };
+  for (const p of properties) {
+    if (p.status !== "ok" || !p.funnel) continue;
+    any = true;
+    total.itemsViewed += p.funnel.itemsViewed;
+    total.itemsAddedToCart += p.funnel.itemsAddedToCart;
+    total.itemsCheckedOut += p.funnel.itemsCheckedOut;
+    total.itemsPurchased += p.funnel.itemsPurchased;
+  }
+  return any ? total : null;
 }
 
 export type Granularity = "daily" | "weekly" | "monthly";

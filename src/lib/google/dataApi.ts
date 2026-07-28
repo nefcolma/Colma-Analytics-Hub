@@ -2,7 +2,13 @@ import { fetchWithRetry } from "../retry";
 import type { CompareMode, DateRange, PropertyReport, PropertySummary } from "../types";
 import { compareRangeFor } from "../dateRanges";
 import { errorFromStatus, GoogleApiError } from "./errors";
-import { parseDimensionRows, parseKpiReport, parseTrend, type RunReportResult } from "./normalize";
+import {
+  parseDimensionRows,
+  parseFunnel,
+  parseKpiReport,
+  parseTrend,
+  type RunReportResult,
+} from "./normalize";
 
 const DATA_BASE = "https://analyticsdata.googleapis.com/v1beta";
 
@@ -107,8 +113,28 @@ function buildRequests(range: DateRange, compareRange?: DateRange): InnerRequest
       orderBys: descBy("activeUsers"),
       limit: "4",
     },
+    // --- Optional sections (third batch, best-effort) ------------------------
+    {
+      dateRanges: single,
+      dimensions: [{ name: "searchTerm" }],
+      metrics: [{ name: "eventCount" }, { name: "activeUsers" }],
+      orderBys: descBy("eventCount"),
+      limit: "10",
+    },
+    {
+      dateRanges: single,
+      metrics: [
+        { name: "itemsViewed" },
+        { name: "itemsAddedToCart" },
+        { name: "itemsCheckedOut" },
+        { name: "itemsPurchased" },
+      ],
+    },
   ];
 }
+
+/** Requests 0..CORE_REQUESTS are required; the rest power optional sections. */
+const CORE_REQUESTS = 10;
 
 async function batchRunReports(
   propertyId: string,
@@ -135,9 +161,13 @@ async function batchRunReports(
 }
 
 /**
- * Runs the full report set for one property. batchRunReports keeps this to two
- * HTTP calls per property (Google allows up to 5 requests per batch), which is
- * gentle on the Data API quota.
+ * Runs the full report set for one property. Google allows up to 5 requests per
+ * batchRunReports call, so the twelve queries take three HTTP calls.
+ *
+ * The first two batches carry the core report and must succeed. The third holds
+ * the optional sections (site search, ecommerce funnel) and is best-effort: if
+ * it fails — a property with those dimensions unavailable, a transient error —
+ * the core report is still returned with those sections simply absent.
  */
 export async function runPropertyReport(
   property: PropertySummary,
@@ -147,12 +177,16 @@ export async function runPropertyReport(
 ): Promise<PropertyReport> {
   const compareRange = compareRangeFor(range, compare);
   const requests = buildRequests(range, compareRange);
-  const [first, second] = await Promise.all([
+  const [first, second, extra] = await Promise.all([
     batchRunReports(property.propertyId, accessToken, requests.slice(0, 5)),
-    batchRunReports(property.propertyId, accessToken, requests.slice(5)),
+    batchRunReports(property.propertyId, accessToken, requests.slice(5, CORE_REQUESTS)),
+    batchRunReports(property.propertyId, accessToken, requests.slice(CORE_REQUESTS)).catch(
+      () => [] as RunReportResult[]
+    ),
   ]);
   const [kpiR, trendR, channelsR, sourceR, pagesR] = first;
   const [landingR, geoR, devicesR, productsR, newReturnR] = second;
+  const [searchR, funnelR] = extra;
 
   const kpis = parseKpiReport(kpiR, Boolean(compareRange));
   const currencyCode = kpiR?.metadata?.currencyCode ?? property.currencyCode ?? "USD";
@@ -182,5 +216,7 @@ export async function runPropertyReport(
     devices: parseDimensionRows(devicesR, ["activeUsers", "sessions"]),
     products: parseDimensionRows(productsR, ["revenue", "quantity", "views"]),
     newVsReturning: parseDimensionRows(newReturnR, ["activeUsers", "sessions"]),
+    searchTerms: parseDimensionRows(searchR, ["events", "activeUsers"]),
+    funnel: parseFunnel(funnelR),
   };
 }

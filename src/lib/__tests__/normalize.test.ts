@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseDimensionRows,
+  parseFunnel,
   parseKpiReport,
   parseTrend,
   type RunReportResult,
@@ -126,5 +127,29 @@ describe("parseDimensionRows", () => {
 
   it("returns an empty array for a missing report", () => {
     expect(parseDimensionRows(undefined, ["sessions"])).toEqual([]);
+  });
+});
+
+describe("parseFunnel", () => {
+  const funnelReport = (values: string[]): RunReportResult => ({
+    rows: [{ metricValues: values.map((value) => ({ value })) }],
+  });
+
+  it("reads the four stages in request order", () => {
+    expect(parseFunnel(funnelReport(["1000", "240", "130", "80"]))).toEqual({
+      itemsViewed: 1000,
+      itemsAddedToCart: 240,
+      itemsCheckedOut: 130,
+      itemsPurchased: 80,
+    });
+  });
+
+  it("returns undefined when the batch was skipped or empty", () => {
+    expect(parseFunnel(undefined)).toBeUndefined();
+    expect(parseFunnel({ rows: [] })).toBeUndefined();
+  });
+
+  it("returns undefined when every stage is zero, so the section stays hidden", () => {
+    expect(parseFunnel(funnelReport(["0", "0", "0", "0"]))).toBeUndefined();
   });
 });

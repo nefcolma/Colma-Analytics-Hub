@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  aggregateFunnel,
   aggregateKpis,
   aggregateRows,
   aggregateTrend,
@@ -200,9 +201,86 @@ describe("aggregateRows", () => {
     expect(aggregateRows([prop({ channels: many })], (p) => p.channels, 10)).toHaveLength(10);
   });
 
+  it("sums revenue, quantity, and event counts so no metric is dropped", () => {
+    const rows = aggregateRows(
+      [
+        prop({ propertyId: "1", searchTerms: [{ key: "wood urn", events: 30, activeUsers: 20 }] }),
+        prop({ propertyId: "2", searchTerms: [{ key: "wood urn", events: 12, activeUsers: 9 }] }),
+      ],
+      (p) => p.searchTerms
+    );
+    expect(rows[0].events).toBe(42);
+    expect(rows[0].activeUsers).toBe(29);
+
+    const items = aggregateRows(
+      [
+        prop({ propertyId: "1", products: [{ key: "Metal Urn", revenue: 100, quantity: 2 }] }),
+        prop({ propertyId: "2", products: [{ key: "Metal Urn", revenue: 50, quantity: 1 }] }),
+      ],
+      (p) => p.products,
+      10,
+      (r) => r.revenue ?? 0
+    );
+    expect(items[0].revenue).toBe(150);
+    expect(items[0].quantity).toBe(3);
+  });
+
+  it("ranks by the supplied sort value instead of the volume metric", () => {
+    const rows = aggregateRows(
+      [
+        prop({
+          products: [
+            { key: "Low revenue, many views", revenue: 10, views: 5000 },
+            { key: "High revenue, few views", revenue: 900, views: 10 },
+          ],
+        }),
+      ],
+      (p) => p.products,
+      10,
+      (r) => r.revenue ?? 0
+    );
+    expect(rows[0].key).toBe("High revenue, few views");
+  });
+
   it("does not leak the internal weight field", () => {
     const rows = aggregateRows([prop({ channels: [{ key: "Direct", sessions: 5 }] })], (p) => p.channels);
     expect(Object.keys(rows[0])).not.toContain("_w");
+  });
+});
+
+describe("aggregateFunnel", () => {
+  const funnel = (v: number) => ({
+    itemsViewed: v * 10,
+    itemsAddedToCart: v * 4,
+    itemsCheckedOut: v * 2,
+    itemsPurchased: v,
+  });
+
+  it("returns null when no site reported a funnel", () => {
+    expect(aggregateFunnel([prop({})])).toBeNull();
+    expect(aggregateFunnel([])).toBeNull();
+  });
+
+  it("sums every stage across sites", () => {
+    const total = aggregateFunnel([
+      prop({ propertyId: "1", funnel: funnel(10) }),
+      prop({ propertyId: "2", funnel: funnel(5) }),
+    ]);
+    expect(total).toEqual({
+      itemsViewed: 150,
+      itemsAddedToCart: 60,
+      itemsCheckedOut: 30,
+      itemsPurchased: 15,
+    });
+  });
+
+  it("ignores failed sites and sites without a funnel", () => {
+    const total = aggregateFunnel([
+      prop({ propertyId: "1", funnel: funnel(1) }),
+      prop({ propertyId: "2", status: "error", funnel: funnel(99) }),
+      prop({ propertyId: "3" }),
+    ]);
+    expect(total).toEqual(funnel(1));
   });
 });
 

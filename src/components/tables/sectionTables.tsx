@@ -157,6 +157,29 @@ export function GeographyTable({ rows }: { rows: DimensionRow[] }) {
   );
 }
 
+export function SearchTermsTable({ rows }: { rows: DimensionRow[] }) {
+  return (
+    <DataTable
+      rows={rows}
+      rowKey={(r) => r.key}
+      initialSort={{ id: "events", desc: true }}
+      emptyLabel="No on-site searches recorded for this period."
+      columns={[
+        {
+          id: "key",
+          label: "Search term",
+          value: (r) => r.key,
+          render: (r) => <span className="block max-w-56 truncate">{r.key}</span>,
+        },
+        ...metricCols([
+          { id: "events", label: "Searches" },
+          { id: "activeUsers", label: "Active users" },
+        ]),
+      ]}
+    />
+  );
+}
+
 export function ProductsTable({
   rows,
   revenueCurrency,

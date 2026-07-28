@@ -73,6 +73,19 @@ export type DimensionRow = {
   revenue?: number;
   /** Units sold (items purchased) for product rows. */
   quantity?: number;
+  /** Raw event count (e.g. number of on-site searches for a term). */
+  events?: number;
+};
+
+/**
+ * Item-scoped ecommerce funnel totals. Every stage counts items, so the
+ * stage-to-stage percentages are directly comparable.
+ */
+export type EcommerceFunnel = {
+  itemsViewed: number;
+  itemsAddedToCart: number;
+  itemsCheckedOut: number;
+  itemsPurchased: number;
 };
 
 export type ReportError = {
@@ -111,6 +124,10 @@ export type PropertyReport = {
   products?: DimensionRow[];
   /** Active users split into new vs returning. */
   newVsReturning?: DimensionRow[];
+  /** What visitors typed into the site's own search box. */
+  searchTerms?: DimensionRow[];
+  /** View → cart → checkout → purchase totals. */
+  funnel?: EcommerceFunnel;
 };
 
 export type ReportRequest = {

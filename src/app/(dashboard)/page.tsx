@@ -10,14 +10,17 @@ import { RevenueBreakdown } from "@/components/kpi/RevenueBreakdown";
 import { TrendChart } from "@/components/charts/TrendChart";
 import { DevicesChart } from "@/components/charts/DevicesChart";
 import { NewReturningChart } from "@/components/charts/NewReturningChart";
+import { FunnelChart } from "@/components/charts/FunnelChart";
 import {
   AcquisitionTable,
   GeographyTable,
   LandingPagesTable,
   ProductsTable,
+  SearchTermsTable,
   TopPagesTable,
 } from "@/components/tables/sectionTables";
 import {
+  aggregateFunnel,
   aggregateKpis,
   aggregateRows,
   aggregateTrend,
@@ -79,8 +82,14 @@ export default function OverviewPage() {
     () => aggregateRows(okProperties, (p) => p.newVsReturning, 4),
     [okProperties]
   );
+  const searchTerms = useMemo(
+    () => aggregateRows(okProperties, (p) => p.searchTerms, 10, (r) => r.events ?? 0),
+    [okProperties]
+  );
+  const funnel = useMemo(() => aggregateFunnel(okProperties), [okProperties]);
   const hasProducts = products.length > 0;
   const hasNewReturning = newVsReturning.some((r) => (r.activeUsers ?? 0) > 0);
+  const hasSearchTerms = searchTerms.some((r) => (r.events ?? 0) > 0);
   const revenueCurrency = kpis?.revenue.currency;
 
   // ---- Interface states ----------------------------------------------------
@@ -245,6 +254,29 @@ export default function OverviewPage() {
                         subtitle="First-time vs returning active users"
                       />
                       <NewReturningChart rows={newVsReturning} />
+                    </Card>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {funnel || hasSearchTerms ? (
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {funnel ? (
+                    <Card>
+                      <CardHeader
+                        title="Ecommerce funnel"
+                        subtitle="Where shoppers drop off between viewing and buying"
+                      />
+                      <FunnelChart funnel={funnel} />
+                    </Card>
+                  ) : null}
+                  {hasSearchTerms ? (
+                    <Card>
+                      <CardHeader
+                        title="Site search terms"
+                        subtitle="What visitors searched for on your sites"
+                      />
+                      <SearchTermsTable rows={searchTerms} />
                     </Card>
                   ) : null}
                 </div>

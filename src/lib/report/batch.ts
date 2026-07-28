@@ -3,16 +3,20 @@ import type { PropertyReport, PropertySummary } from "../types";
 /**
  * Client-side batching for report generation.
  *
- * Each site costs two Google Analytics calls, and a single Cloudflare Worker
+ * Each site costs three Google Analytics calls, and a single Cloudflare Worker
  * request is capped at ~50 subrequests on the free plan. Rather than send every
- * selected site in one request (which fails past ~24 sites), the client splits
+ * selected site in one request (which fails past ~16 sites), the client splits
  * the selection into batches and issues one request per batch. These helpers
  * are pure so the splitting/merging is unit-tested independently of fetch.
  */
 
-/** Max sites per report request. 20 × 2 Analytics calls = 40 subrequests, a
- *  safe margin under the free-plan limit even with the account-summary call. */
-export const REPORT_CHUNK_SIZE = 20;
+/**
+ * Max sites per report request. 12 × 3 Analytics calls = 36 subrequests, plus
+ * the account-summary call — comfortably under the free-plan limit with room
+ * left for retries. Keep this in step with the number of batchRunReports calls
+ * in runPropertyReport: sites × calls must stay well below 50.
+ */
+export const REPORT_CHUNK_SIZE = 12;
 
 /** How many batches to run at once — small, to stay gentle on Google's quota. */
 export const REPORT_CHUNK_CONCURRENCY = 2;
